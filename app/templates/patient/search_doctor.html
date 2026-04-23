@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Find Doctors{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-4 p-lg-5 mb-4">
+  <div class="row align-items-center g-4">
+    <div class="col-lg-8">
+      <span class="eyebrow mb-3">Quick and Clear Booking</span>
+      <h1 class="display-6 fw-bold mb-3">Find suitable doctors and book appointments in a few steps.</h1>
+      <p class="mb-0 text-white-50">Loc theo chuyen khoa va benh vien de tim bac si phu hop mot cach nhanh gon.</p>
+    </div>
+    <div class="col-lg-4">
+      <div class="row g-3">
+        <div class="col-6">
+          <div class="auth-banner-stat">
+            <div class="small text-white-50">Bac si hien co</div>
+            <div class="fs-4 fw-bold">{{ doctors|length }}</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="auth-banner-stat">
+            <div class="small text-white-50">Chuyen khoa</div>
+            <div class="fs-4 fw-bold">{{ specialties|length }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="row g-3 align-items-end mb-4">
+  <div class="col-md-8">
+    <h2 class="section-title">Search Appointments</h2>
+    <p class="section-subtitle">Enter search criteria to refine results.</p>
+  </div>
+  <div class="col-md-4 text-md-end">
+    {% if current_user.is_authenticated and current_user.role.value == 'PATIENT' %}
+      <a class="btn btn-outline-primary" href="{{ url_for('patient.dashboard') }}">View my appointments</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="filter-panel p-3 p-lg-4 mb-4">
+  <form method="post" class="row g-3">
+    {{ form.csrf_token }}
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">Doctor Name</label>
+      {{ form.doctor_name(class="form-control", placeholder="VD: Nguyen Van A", list="doctor_names") }}
+      <datalist id="doctor_names">
+        {% for n in doctor_names %}
+          <option value="{{ n }}"></option>
+        {% endfor %}
+      </datalist>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label fw-semibold">Hospital / Clinic</label>
+      {{ form.hospital_name(class="form-control", placeholder="Nhap ten co so", list="hospitals") }}
+      <datalist id="hospitals">
+        {% for h in hospitals %}
+          <option value="{{ h }}"></option>
+        {% endfor %}
+      </datalist>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label fw-semibold">Specialty</label>
+      {{ form.specialty(class="form-control", placeholder="VD: Tai mui hong", list="specialties") }}
+      <datalist id="specialties">
+        {% for s in specialties %}
+          <option value="{{ s }}"></option>
+        {% endfor %}
+      </datalist>
+    </div>
+    <div class="col-md-12 d-grid d-md-flex justify-content-md-end align-items-end">
+      <button class="btn btn-primary px-4" type="submit">{{ form.submit.label.text }}</button>
+    </div>
+  </form>
+  {% if specialties %}
+    <div class="mt-3 small">
+      <span class="text-muted me-2">Quick search:</span>
+      {% for s in specialties %}
+        <a class="list-chip" href="{{ url_for('patient.search', specialty=s) }}">{{ s }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if form.doctor_name.data and (filtered_hospitals or filtered_specialties) %}
+    <div class="mt-3 filter-panel p-3">
+      <div class="small text-muted mb-2">Filter by hospitals/departments found in doctor-name results:</div>
+      <form method="get" action="{{ url_for('patient.search') }}" class="row g-3 align-items-end">
+        {% for key, value in base_query_params.items() %}
+          {% if key not in ['result_hospital', 'result_specialty'] %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+          {% endif %}
+        {% endfor %}
+        {% if filtered_hospitals %}
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Hospital</label>
+            <select class="form-select" name="result_hospital" onchange="this.form.submit()">
+              <option value="">All hospitals</option>
+              {% for h in filtered_hospitals %}
+                <option value="{{ h }}" {% if selected_result_hospital == h %}selected{% endif %}>{{ h }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        {% endif %}
+        {% if filtered_specialties %}
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Department</label>
+            <select class="form-select" name="result_specialty" onchange="this.form.submit()">
+              <option value="">All departments</option>
+              {% for s in filtered_specialties %}
+                <option value="{{ s }}" {% if selected_result_specialty == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        {% endif %}
+        <noscript>
+          <div class="col-12">
+            <button class="btn btn-outline-primary" type="submit">Apply filter</button>
+          </div>
+        </noscript>
+      </form>
+    </div>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+  {% for d in doctors %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card doctor-card h-100">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="doctor-avatar">{{ d.user.username[:1]|upper }}</div>
+            <div class="flex-grow-1">
+              <h2 class="h5 mb-1">{{ d.user.username }}</h2>
+              <div class="soft-badge mb-2">{{ d.specialty }}</div>
+              {% if d.hospital %}
+                <div class="text-muted small">{{ d.hospital.name }}</div>
+              {% endif %}
+            </div>
+            <span class="soft-badge alt">{{ d.experience_years }} years</span>
+          </div>
+          {% if d.description %}
+            <p class="mt-3 mb-0 small text-muted">{{ d.description[:140] }}{% if d.description|length > 140 %}...{% endif %}</p>
+          {% endif %}
+        </div>
+        <div class="card-footer px-4 pb-4 border-0">
+          <a class="btn btn-outline-primary w-100" href="{{ url_for('patient.doctor_detail', doctor_id=d.id) }}">View doctor details and schedule</a>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="col-12">
+      <div class="empty-state">No doctors found matching your criteria.</div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

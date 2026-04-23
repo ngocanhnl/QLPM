@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Lich hen cua toi{% endblock %}
+
+{% block content %}
+<section class="hero-panel p-4 p-lg-5 mb-4">
+  <div class="row align-items-center g-4">
+    <div class="col-lg-8">
+      <span class="eyebrow mb-3">Manage Appointments</span>
+      <h1 class="display-6 fw-bold mb-2">Track all booked appointments</h1>
+      <p class="mb-0 text-white-50">Quickly view confirmation status, assigned doctors, and appointment creation time on a unified screen.</p>
+    </div>
+    <div class="col-lg-4 text-lg-end">
+      <a class="btn btn-light px-4" href="{{ url_for('patient.appointment_new') }}">New Appointment</a>
+    </div>
+  </div>
+</section>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="metric-card">
+      <div class="small text-muted mb-2">Total Appointments</div>
+      <div class="metric-value">{{ appointments|length }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="metric-card">
+      <div class="small text-muted mb-2">Pending</div>
+      <div class="metric-value">{{ appointments|selectattr('status.value', 'equalto', 'PENDING')|list|length }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="metric-card">
+      <div class="small text-muted mb-2">Confirmed</div>
+      <div class="metric-value">{{ appointments|selectattr('status.value', 'equalto', 'CONFIRMED')|list|length }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-4">
+    <div class="mb-3">
+      <h2 class="section-title mb-1">Appointment List</h2>
+      <p class="section-subtitle">Bao gom lich ban tu dat va lich nguoi khac da dat ho theo so dien thoai cua tai khoan.</p>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Doctor</th>
+            <th>Specialty</th>
+            <th>Appointment</th>
+            <th>Booking For</th>
+            <th>Contact Info</th>
+            <th>Status</th>
+            <th class="text-end">Rating</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in appointments %}
+            <tr>
+              <td>{{ a.doctor.user.username }}</td>
+              <td class="text-muted">{{ a.doctor.specialty }}</td>
+              <td>{{ a.schedule.date }} {{ a.schedule.start_time.strftime('%H:%M') }}-{{ a.schedule.end_time.strftime('%H:%M') }}</td>
+              <td>
+                {% if a.booking_for == 'self' %}
+                  <span class="soft-badge alt">Myself</span>
+                {% else %}
+                  <span class="soft-badge">Relative</span>
+                  {% if current_user.phone and a.contact_phone == current_user.phone and a.patient_id != current_user.id %}
+                    <div class="small text-muted mt-1">Booked on your behalf</div>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td class="small">
+                <div><strong>Name:</strong> {{ a.contact_fullname or '-' }}</div>
+                <div><strong>Phone:</strong> {{ a.contact_phone or '-' }}</div>
+                <div><strong>Email:</strong> {{ a.contact_email or '-' }}</div>
+                <div><strong>Symptoms:</strong> {{ a.symptoms or '-' }}</div>
+              </td>
+              <td>
+                {% if a.status.value == 'PENDING' %}
+                  <span class="soft-badge warning">PENDING</span>
+                {% elif a.status.value == 'CONFIRMED' %}
+                  <span class="soft-badge success">CONFIRMED</span>
+                {% else %}
+                  <span class="soft-badge">CANCELLED</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if review_meta[a.id].can_review %}
+                  <a class="btn btn-sm btn-primary px-3" href="{{ url_for('patient.appointment_review', appointment_id=a.id) }}">Đánh giá</a>
+                {% elif review_meta[a.id].reviewed %}
+                  <span class="soft-badge alt">Đã đánh giá</span>
+                {% else %}
+                  <span class="soft-badge">Chưa thể đánh giá</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8"><div class="empty-state">Ban chua co lich hen nao. Hay bat dau dat lich kham moi.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

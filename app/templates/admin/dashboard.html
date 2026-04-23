@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3 flex-wrap gap-2">
+  <div>
+    <h1 class="h4 mb-0">Admin dashboard</h1>
+    <div class="text-muted">Quick view of all users.</div>
+  </div>
+  <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.diseases_list') }}">Manage diseases</a>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <h2 class="h6 mb-3">Hospital management</h2>
+    <form method="post" action="{{ url_for('admin.create_hospital') }}" class="row g-2 align-items-end mb-3">
+      {{ hospital_form.csrf_token }}
+      <div class="col-md-6">
+        <label class="form-label form-label-sm">{{ hospital_form.name.label }}</label>
+        {{ hospital_form.name(class="form-control form-control-sm", placeholder="Ex: Benh vien Da khoa Trung uong") }}
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-sm btn-primary w-100" type="submit">{{ hospital_form.submit.label.text }}</button>
+      </div>
+    </form>
+    <div class="small text-muted mb-2">Doctors can only choose hospitals from this list during registration.</div>
+    <div class="d-flex flex-wrap gap-2">
+      {% for hospital in hospitals %}
+        <span class="badge text-bg-light border">{{ hospital.name }}</span>
+      {% else %}
+        <span class="text-muted small">No hospitals yet.</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="get" class="row g-2 mb-3">
+      <div class="col-md-3">
+        <input class="form-control form-control-sm" type="text" name="username" placeholder="Username" value="{{ filters.username if filters else '' }}" />
+      </div>
+      <div class="col-md-3">
+        <input class="form-control form-control-sm" type="text" name="doctor_name" placeholder="Doctor name" value="{{ filters.doctor_name if filters else '' }}" />
+      </div>
+      <div class="col-md-3">
+        <input class="form-control form-control-sm" type="text" name="patient_name" placeholder="Patient name" value="{{ filters.patient_name if filters else '' }}" />
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" name="role">
+          <option value="">All roles</option>
+          <option value="ADMIN" {% if filters and filters.role == 'ADMIN' %}selected{% endif %}>ADMIN</option>
+          <option value="DOCTOR" {% if filters and filters.role == 'DOCTOR' %}selected{% endif %}>DOCTOR</option>
+          <option value="PATIENT" {% if filters and filters.role == 'PATIENT' %}selected{% endif %}>PATIENT</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <input class="form-control form-control-sm" type="text" name="hospital_name" placeholder="Hospital name" value="{{ filters.hospital_name if filters else '' }}" />
+      </div>
+      <div class="col-md-3">
+        <input class="form-control form-control-sm" type="text" name="specialty" placeholder="Specialty" value="{{ filters.specialty if filters else '' }}" />
+      </div>
+      <div class="col-md-6 d-flex gap-2">
+        <button class="btn btn-sm btn-primary" type="submit">Search</button>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.dashboard') }}">Clear</a>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr>
+              <td>{{ u.id }}</td>
+              <td>{{ u.username }}</td>
+              <td><span class="badge text-bg-light border">{{ u.role.value }}</span></td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  {% if u.role.value == 'DOCTOR' and u.doctor_profile %}
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('doctor.profile', doctor_id=u.doctor_profile.id) }}">Profile</a>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('doctor.dashboard', doctor_id=u.doctor_profile.id) }}">Dashboard</a>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('doctor.schedules', doctor_id=u.doctor_profile.id) }}">Schedules</a>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('doctor.weekly', doctor_id=u.doctor_profile.id) }}">Weekly</a>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('doctor.appointments', doctor_id=u.doctor_profile.id) }}">Appointments</a>
+                  {% elif u.role.value == 'PATIENT' %}
+                    <a class="btn btn-sm btn-outline-success" href="{{ url_for('patient.profile', patient_id=u.id) }}">Profile</a>
+                    <a class="btn btn-sm btn-outline-success" href="{{ url_for('patient.dashboard', patient_id=u.id) }}">History</a>
+                    <a class="btn btn-sm btn-outline-success" href="{{ url_for('patient.appointment_new', patient_id=u.id) }}">Book</a>
+                  {% elif u.role.value == 'ADMIN' %}
+                    <span class="text-muted small">System admin</span>
+                  {% endif %}
+
+                  {% if u.role.value != 'ADMIN' %}
+                    <form method="post" action="{{ url_for('admin.delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete user {{ u.username }}?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="text-muted">No users.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

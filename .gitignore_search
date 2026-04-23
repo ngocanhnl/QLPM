@@ -1,0 +1,53 @@
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+
+# Ignore virtual environment
+venv/
+
+# Ignore IDE settings
+.idea/
+.vscode/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+
+# Ignore compiled files
+*.pyc
+*.pyo
+
+# Ignore database migrations
+sql/
+
+# Ignore static files
+app/static/
+
+# Ignore templates
+app/templates/
+
+# Ignore scripts not related to search
+scripts/
+
+# Ignore tests
+*.test.py
+test_*.py
+
+# Ignore other non-search-related files
+app/routes/
+app/services/
+app/models/
+!app/models/enums.py
+!app/models/doctor.py
+!app/models/appointment.py
+
+# Allow search-related files
+!app/routes/patient_routes.py
+!app/routes/doctor_routes.py
+!app/services/appointment_service.py
+!app/services/doctor_service.py
+!app/services/forms.py

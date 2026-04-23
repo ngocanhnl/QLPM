@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Xac nhan thanh toan{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-10">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <section class="hero-panel p-4 h-100">
+          <span class="eyebrow mb-3">Final Step</span>
+          <h1 class="h2 fw-bold mb-3">Confirm information before payment</h1>
+          <p class="text-white-50 mb-4">After VNPay succeeds, the appointment will be created with the status <strong class="text-white">PENDING</strong> for the medical facility to process.</p>
+
+          {% if schedule %}
+            <div class="auth-banner-stat mb-3">
+              <div class="small text-white-50 mb-1">Selected Time Slot</div>
+              <div class="fw-semibold">{{ schedule.date }}</div>
+              <div>{{ schedule.start_time.strftime('%H:%M') }} - {{ schedule.end_time.strftime('%H:%M') }}</div>
+            </div>
+          {% endif %}
+
+          <div class="auth-banner-stat">
+            <div class="small text-white-50 mb-1">Total Payment</div>
+            <div class="fs-3 fw-bold">{{ amount|round|int }} VND</div>
+          </div>
+        </section>
+      </div>
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-body p-4 p-lg-5">
+            <div class="mb-4">
+              <h2 class="section-title mb-1">Booking Information</h2>
+              <p class="section-subtitle">Enter correct information to receive confirmation and transaction reconciliation.</p>
+            </div>
+
+            <form method="post">
+              {{ form.csrf_token }}
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.booking_for.label }}</label>
+                {{ form.booking_for(class="form-select", id="booking_for") }}
+                {% for e in form.booking_for.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="mb-3" id="fullname-wrapper">
+                <label class="form-label fw-semibold">{{ form.fullname.label }}</label>
+                {{ form.fullname(class="form-control", placeholder="Full Name", id="fullname") }}
+                {% for e in form.fullname.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="mb-3" id="email-wrapper">
+                <label class="form-label fw-semibold">{{ form.email.label }}</label>
+                {{ form.email(class="form-control", placeholder="Confirmation Email", id="email") }}
+                <div class="form-text" id="email-help">Bo sung email cho tai khoan cua ban.</div>
+                {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="mb-3" id="phone-wrapper">
+                <label class="form-label fw-semibold">{{ form.phone.label }}</label>
+                {{ form.phone(class="form-control", placeholder="Phone number", id="phone") }}
+                <div class="form-text" id="phone-help">Bo sung so dien thoai cho tai khoan cua ban.</div>
+                {% for e in form.phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="mb-4" id="symptoms-wrapper">
+                <label class="form-label fw-semibold">{{ form.symptoms.label }}</label>
+                {{ form.symptoms(class="form-control", rows="3", placeholder="Nhập triệu chứng của người thân", id="symptoms") }}
+                {% for e in form.symptoms.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="summary-card mb-4">
+                <div class="form-check mb-0">
+                  {{ form.agreed(class="form-check-input") }}
+                  <label class="form-check-label" for="{{ form.agreed.id }}">{{ form.agreed.label.text }}</label>
+                </div>
+                {% for e in form.agreed.errors %}<div class="text-danger small mt-2">{{ e }}</div>{% endfor %}
+              </div>
+
+              <button class="btn btn-primary w-100" type="submit">{{ form.submit.label.text }}</button>
+            </form>
+          </div>
+          <div class="card-footer p-4 p-lg-5 pt-0 border-0">
+            <a class="btn btn-outline-secondary w-100" href="{{ url_for('patient.search') }}">Quay lai tra cuu</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const bookingFor = document.getElementById("booking_for");
+  const fullnameInput = document.getElementById("fullname");
+  const emailInput = document.getElementById("email");
+  const phoneInput = document.getElementById("phone");
+  const fullnameWrapper = document.getElementById("fullname-wrapper");
+  const emailWrapper = document.getElementById("email-wrapper");
+  const phoneWrapper = document.getElementById("phone-wrapper");
+  const symptomsInput = document.getElementById("symptoms");
+  const symptomsWrapper = document.getElementById("symptoms-wrapper");
+  const selfInfo = {
+    fullname: "{{ self_info.fullname|default('', true)|e }}",
+    email: "{{ self_info.email|default('', true)|e }}",
+    phone: "{{ self_info.phone|default('', true)|e }}",
+    symptoms: "{{ self_info.symptoms|default('', true)|e }}",
+  };
+  const selfMissingEmail = {{ "true" if self_missing_email else "false" }};
+  const selfMissingPhone = {{ "true" if self_missing_phone else "false" }};
+  const emailHelp = document.getElementById("email-help");
+  const phoneHelp = document.getElementById("phone-help");
+
+  function applyBookingForMode() {
+    const isSelf = bookingFor && bookingFor.value === "self";
+    if (isSelf) {
+      fullnameInput.value = selfInfo.fullname;
+      emailInput.value = selfInfo.email;
+      phoneInput.value = selfInfo.phone;
+      fullnameWrapper.style.display = "none";
+      emailWrapper.style.display = selfMissingEmail ? "block" : "none";
+      phoneWrapper.style.display = selfMissingPhone ? "block" : "none";
+      symptomsWrapper.style.display = "block";
+      if (emailHelp) emailHelp.style.display = selfMissingEmail ? "block" : "none";
+      if (phoneHelp) phoneHelp.style.display = selfMissingPhone ? "block" : "none";
+    } else {
+      fullnameWrapper.style.display = "block";
+      emailWrapper.style.display = "block";
+      phoneWrapper.style.display = "block";
+      symptomsWrapper.style.display = "block";
+      if (emailHelp) emailHelp.style.display = "none";
+      if (phoneHelp) phoneHelp.style.display = "none";
+    }
+  }
+
+  if (bookingFor) {
+    bookingFor.addEventListener("change", applyBookingForMode);
+    applyBookingForMode();
+  }
+</script>
+{% endblock %}

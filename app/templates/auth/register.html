@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+  <div class="row g-4 align-items-stretch">
+    <div class="col-lg-5">
+      <section class="auth-banner h-100 d-flex flex-column justify-content-between">
+        <div>
+          <span class="eyebrow mb-3">Create Account</span>
+          <h1 class="display-6 fw-bold mb-3">Register to book appointments and manage profiles.</h1>
+          <p class="text-white-50 mb-0">Patients and doctors can both use the same system, but the interface and quantity of actions are kept separate.</p>
+        </div>
+        <div class="row g-3 mt-4">
+          <div class="col-12">
+            <div class="auth-banner-stat">
+              <div class="small text-white-50">Benefit</div>
+              <div class="fw-bold">Book appointments, track medical history, manage patient profiles</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-body p-4 p-lg-5">
+          <h2 class="section-title mb-1">Create New Account</h2>
+          <p class="section-subtitle mb-4">Enter basic information. If registering as a doctor, the system will display additional professional information.</p>
+          <form method="post">
+            {{ form.csrf_token }}
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">{{ form.username.label }}</label>
+                {{ form.username(class="form-control", placeholder="Username") }}
+                {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">{{ form.role.label }}</label>
+                {{ form.role(class="form-select", id="role") }}
+                {% for e in form.role.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">{{ form.email.label }}</label>
+                {{ form.email(class="form-control", placeholder="name@example.com") }}
+                {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">{{ form.phone.label }}</label>
+                {{ form.phone(class="form-control", placeholder="So dien thoai") }}
+                {% for e in form.phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">{{ form.password.label }}</label>
+                {{ form.password(class="form-control", placeholder="Minimum 6 characters") }}
+                {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">{{ form.confirm_password.label }}</label>
+                {{ form.confirm_password(class="form-control", placeholder="Enter password again") }}
+                {% for e in form.confirm_password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+
+            <div id="doctor-fields" class="summary-card mb-3" style="display:none;">
+              <div class="fw-semibold mb-3">Professional information for doctors</div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.specialty.label }}</label>
+                {{ form.specialty(class="form-control", placeholder="VD: Tim mach") }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.hospital_id.label }}</label>
+                {{ form.hospital_id(class="form-select") }}
+                {% for e in form.hospital_id.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.experience_years.label }}</label>
+                {{ form.experience_years(class="form-control", min="0", max="80") }}
+                {% for e in form.experience_years.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.description.label }}</label>
+                {{ form.description(class="form-control", rows="3", placeholder="Brief description of experience and skills") }}
+              </div>
+              <div class="small text-muted">This section is only required when choosing the role as DOCTOR.</div>
+            </div>
+
+            <button class="btn btn-primary w-100" type="submit">{{ form.submit.label.text }}</button>
+          </form>
+          <div class="mt-4 small text-muted">
+            Already have an account? <a href="{{ url_for('auth.login') }}">Login</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function toggleDoctorFields() {
+    const role = document.getElementById('role').value;
+    const box = document.getElementById('doctor-fields');
+    box.style.display = (role === 'DOCTOR') ? 'block' : 'none';
+  }
+  document.getElementById('role').addEventListener('change', toggleDoctorFields);
+  toggleDoctorFields();
+</script>
+{% endblock %}

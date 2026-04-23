@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Dang nhap{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+  <div class="row g-4 align-items-stretch">
+    <div class="col-lg-5">
+      <section class="auth-banner h-100 d-flex flex-column justify-content-between">
+        <div>
+          <span class="eyebrow mb-3">Welcome Back</span>
+          <h1 class="display-6 fw-bold mb-3">Log in to continue booking appointments</h1>
+          <p class="text-white-50 mb-0">Quick access to appointments, doctor information, and health assistant in one platform.</p>
+        </div>
+        <div class="row g-3 mt-4">
+          <div class="col-6">
+            <div class="auth-banner-stat">
+              <div class="small text-white-50">Dat lich</div>
+              <div class="fw-bold">Nhanh hon</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="auth-banner-stat">
+              <div class="small text-white-50">Theo doi</div>
+              <div class="fw-bold">Tap trung</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-body p-4 p-lg-5">
+          <h2 class="section-title mb-1">Log in to your account</h2>
+          <p class="section-subtitle mb-4">Use your registered username and password.</p>
+          <form method="post">
+            {{ form.csrf_token }}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ form.username.label }}</label>
+              {{ form.username(class="form-control", placeholder="Enter username") }}
+              {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-semibold">{{ form.password.label }}</label>
+              {{ form.password(class="form-control", placeholder="Enter password") }}
+              {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <button class="btn btn-primary w-100" type="submit">{{ form.submit.label.text }}</button>
+          </form>
+          <div class="mt-4 small text-muted">
+            Don't have an account? <a href="{{ url_for('auth.register') }}">Register now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

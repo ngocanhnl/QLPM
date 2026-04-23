@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'edit' %}Edit disease — Admin{% else %}Add disease — Admin{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+  <div>
+
+    <h1 class="h4 mb-0">{% if mode == 'edit' %}Edit disease{% else %}Add disease{% endif %}</h1>
+    <div class="text-muted small">Embedding được tạo từ <strong>name + symptoms + description</strong> sau khi lưu.</div>
+
+  </div>
+  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.diseases_list') }}">Back to list</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {{ form.csrf_token }}
+      <div class="mb-3">
+        <label class="form-label">{{ form.name.label }}</label>
+        {{ form.name(class="form-control", placeholder="e.g. Acute sinusitis") }}
+        {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ form.symptoms.label }}</label>
+        {{ form.symptoms(class="form-control", rows="4", placeholder="Common symptoms, separated by commas or new lines.") }}
+        {% for e in form.symptoms.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ form.description.label }}</label>
+        {{ form.description(class="form-control", rows="4", placeholder="Short description of the disease") }}
+        {% for e in form.description.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ form.specialty.label }}</label>
+        {{ form.specialty(class="form-control", placeholder="e.g. ENT, Cardiology") }}
+        {% for e in form.specialty.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Update disease{% else %}{{ form.submit.label.text }}{% endif %}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
