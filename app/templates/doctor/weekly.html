@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Weekly schedule{% endblock %}
+
+{% block content %}
+<div class="row g-3 align-items-end mb-3">
+  <div class="col-md-8">
+    <h1 class="h4 mb-0">Weekly working shifts</h1>
+    <div class="text-muted">Define shifts by weekday. Slots will be generated for the next 7 days.</div>
+  </div>
+  <div class="col-md-4 text-md-end">
+    <a class="btn btn-outline-primary" href="{{ url_for('doctor.schedules') }}">Manage schedules</a>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <form method="post" class="row g-2 align-items-end">
+      {{ form.csrf_token }}
+      <div class="col-md-4">
+        <label class="form-label">{{ form.weekday.label }}</label>
+        {{ form.weekday(class="form-select") }}
+        {% for e in form.weekday.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">{{ form.start_time.label }}</label>
+        {{ form.start_time(class="form-control") }}
+        {% for e in form.start_time.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">{{ form.end_time.label }}</label>
+        {{ form.end_time(class="form-control") }}
+        {% for e in form.end_time.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="col-md-2 d-grid">
+        <button class="btn btn-primary" type="submit">{{ form.submit.label.text }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Your weekly shifts</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Weekday</th>
+                <th>Time</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sh in shifts %}
+                <tr>
+                  <td>{{ weekday_labels[sh.weekday] }}</td>
+                  <td>{{ sh.start_time.strftime('%H:%M') }}-{{ sh.end_time.strftime('%H:%M') }}</td>
+                  <td class="text-end">
+                    <form method="post" action="{{ url_for('doctor.weekly_delete', shift_id=sh.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Delete this shift?')">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% else %}
+                <tr><td colspan="3" class="text-muted">No weekly shifts yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Next 7 days (generated slots)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Weekday</th>
+                <th>Slots</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in days %}
+                <tr>
+                  <td>{{ d }}</td>
+                  <td class="text-muted small">{{ weekday_labels[d.weekday()] }}</td>
+                  <td>
+                    {% if schedules_by_date[d] %}
+                      {% for s in schedules_by_date[d] %}
+                        {% if s.appointment and s.appointment.status.value != 'CANCELLED' %}
+                          <span class="badge text-bg-warning me-1">
+                            {{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }} (Booked)
+                          </span>
+                        {% elif s.is_available %}
+                          <span class="badge text-bg-success me-1">
+                            {{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }} (Available)
+                          </span>
+                        {% else %}
+                          <span class="badge text-bg-secondary me-1">
+                            {{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }} (Blocked)
+                          </span>
+                        {% endif %}
+                      {% endfor %}
+                    {% else %}
+                      <span class="text-muted">No slots</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="small text-muted">Booked = yellow, Available = green, Blocked = gray.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Appointment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h1 class="h5 mb-3">Appointment #{{ appointment.id }}</h1>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <div class="small text-muted">Patient</div>
+            <div class="fw-semibold">{{ appointment.patient.username }}</div>
+          </div>
+          <div class="col-md-6">
+            <div class="small text-muted">Slot</div>
+            <div class="fw-semibold">
+              {{ appointment.schedule.date }}
+              {{ appointment.schedule.start_time.strftime('%H:%M') }}-{{ appointment.schedule.end_time.strftime('%H:%M') }}
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="small text-muted">Current status</div>
+          <div><span class="badge text-bg-light border">{{ appointment.status.value }}</span></div>
+        </div>
+
+        <form method="post" class="border rounded p-3 bg-white">
+          {{ form.csrf_token }}
+          <div class="mb-2">
+            <label class="form-label">{{ form.status.label }}</label>
+            {{ form.status(class="form-select") }}
+          </div>
+          <button class="btn btn-primary w-100" type="submit">{{ form.submit.label.text }}</button>
+        </form>
+      </div>
+      <div class="card-footer bg-white">
+        <a class="btn btn-outline-secondary w-100" href="{{ url_for('doctor.appointments') }}">Back</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

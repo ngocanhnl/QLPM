@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Appointments{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+  <div>
+    <h1 class="h4 mb-0">Appointments</h1>
+    <div class="text-muted">Patients who booked your schedules.</div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Slot</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in appointments %}
+            <tr>
+              <td>{{ a.patient.username }}</td>
+              <td>{{ a.schedule.date }} {{ a.schedule.start_time.strftime('%H:%M') }}-{{ a.schedule.end_time.strftime('%H:%M') }}</td>
+              <td><span class="badge text-bg-light border">{{ a.status.value }}</span></td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('doctor.appointment_detail', appointment_id=a.id) }}">Manage</a>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="text-muted">No appointments yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

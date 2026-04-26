@@ -53,3 +53,27 @@ class DoctorService:
     def get_doctor(doctor_id: int) -> Doctor | None:
         return db.session.get(Doctor, doctor_id)
 
+    @staticmethod
+    def get_available_schedules(*, doctor_id: int, from_date: date | None = None) -> list[Schedule]:
+        stmt = (
+            db.select(Schedule)
+            .where(Schedule.doctor_id == doctor_id, Schedule.is_available.is_(True))
+            .order_by(Schedule.date, Schedule.start_time)
+        )
+        if from_date:
+            stmt = stmt.where(Schedule.date >= from_date)
+        return list(db.session.execute(stmt).scalars().all())
+
+    @staticmethod
+    def list_hospital_options() -> list[tuple[int, str]]:
+        rows = db.session.execute(db.select(Hospital.id, Hospital.name).order_by(Hospital.name.asc())).all()
+        return [(int(h_id), h_name) for h_id, h_name in rows]
+
+    @staticmethod
+    def list_doctor_options(*, hospital_id: int | None = None) -> list[tuple[int, str]]:
+        stmt = db.select(Doctor.id, User.username).join(User, User.id == Doctor.user_id).order_by(User.username.asc())
+        if hospital_id:
+            stmt = stmt.where(Doctor.hospital_id == hospital_id)
+        rows = db.session.execute(stmt).all()
+        return [(int(d_id), username) for d_id, username in rows]
+
