@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Trợ lý sức khỏe{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+      <div>
+        <h1 class="h4 mb-0">Trợ lý triệu chứng (RAG)</h1>
+        <p class="text-muted small mb-0">Mô tả triệu chứng — hệ thống gợi ý hướng khám, không thay thế bác sĩ.</p>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white border-bottom py-2">
+        <span class="small text-muted">Hội thoại</span>
+      </div>
+      <div id="chat-messages" class="card-body" style="min-height: 320px; max-height: 480px; overflow-y: auto; background: #f8f9fa;">
+        <div class="mb-3">
+          <div class="d-flex justify-content-start">
+            <div class="rounded-3 px-3 py-2 bg-white border shadow-sm" style="max-width: 90%;">
+              <div class="small text-muted mb-1">Trợ lý</div>
+              <div>Xin chào. Hãy mô tả triệu chứng của bạn (ví dụ: đau đầu, sốt, ho khan…). Tôi sẽ gợi ý chuyên khoa và bác sĩ phù hợp.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer bg-white border-top">
+        <form id="chat-form" class="d-flex gap-2 align-items-end">
+          <div class="flex-grow-1">
+            <label for="chat-input" class="visually-hidden">Nội dung</label>
+            <textarea id="chat-input" class="form-control" rows="2" placeholder="Nhập triệu chứng..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" id="chat-send">Gửi</button>
+        </form>
+      </div>
+    </div>
+
+    <p class="small text-muted mt-2 mb-0">
+      Thông tin chỉ mang tính tham khảo. Nếu có dấu hiệu nặng (khó thở, đau ngực, li bì…), hãy đến cơ sở y tế ngay.
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const messagesEl = document.getElementById('chat-messages');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send');
+
+  function scrollBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function bubble(role, html) {
+    const wrap = document.createElement('div');
+    wrap.className = 'mb-3';
+    const row = document.createElement('div');
+    row.className = role === 'user' ? 'd-flex justify-content-end' : 'd-flex justify-content-start';
+    const box = document.createElement('div');
+    box.className = 'rounded-3 px-3 py-2 shadow-sm ' + (role === 'user' ? 'bg-primary text-white' : 'bg-white border');
+    box.style.maxWidth = '90%';
+    const label = document.createElement('div');
+    label.className = 'small ' + (role === 'user' ? 'text-white-50' : 'text-muted');
+    label.textContent = role === 'user' ? 'Bạn' : 'Trợ lý';
+    box.appendChild(label);
+    const body = document.createElement('div');
+    body.className = 'mt-1';
+    body.innerHTML = html;
+    box.appendChild(body);
+    row.appendChild(box);
+    wrap.appendChild(row);
+    messagesEl.appendChild(wrap);
+    scrollBottom();
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function formatDoctors(list) {
+    if (!list || !list.length) return '<p class="mb-0 small text-muted">Chưa có gợi ý bác sĩ phù hợp.</p>';
+    let h = '<div class="small fw-semibold mb-1">Gợi ý bác sĩ / phòng khám</div><ul class="list-unstyled mb-0 small">';
+    list.forEach(function (d) {
+      const name = escapeHtml(d.doctor_name || '');
+      const spec = escapeHtml(d.specialty || '');
+      const hosp = escapeHtml(d.hospital_name || '—');
+      const slots = d.available_slots != null ? d.available_slots : '—';
+      const did = d.doctor_id;
+      const detailUrl = "{{ url_for('patient.doctor_detail', doctor_id=999999) }}".replace("999999", String(did));
+      h += '<li class="mb-2 border rounded p-2 bg-light">';
+      h += '<div><strong>' + name + '</strong> · ' + spec + '</div>';
+      h += '<div class="text-muted">' + hosp + ' · Lịch trống (ước lượng): ' + slots + '</div>';
+      h += '<a class="btn btn-sm btn-outline-primary mt-1" href="' + detailUrl + '">Xem & đặt lịch</a>';
+      h += '</li>';
+    });
+    h += '</ul>';
+    return h;
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const text = (input.value || '').trim();
+    if (!text) return;
+
+    bubble('user', escapeHtml(text).replace(/\n/g, '<br>'));
+    input.value = '';
+    sendBtn.disabled = true;
+
+    try {
+      const res = await fetch('{{ url_for("chatbot.chatbot") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        bubble('assistant', '<span class="text-danger">' + escapeHtml(data.error || 'Có lỗi xảy ra') + '</span>');
+        return;
+      }
+      const reply = escapeHtml(data.reply || '').replace(/\n/g, '<br>');
+      const spec = data.suggested_specialty ? '<div class="mt-2 small"><span class="badge text-bg-info">Chuyên khoa gợi ý</span> ' + escapeHtml(data.suggested_specialty) + '</div>' : '';
+      const doctors = formatDoctors(data.suggested_doctors);
+
+      let debugHtml = '';
+      if (data.llm_debug && data.llm_debug.raw_text) {
+        const provider = escapeHtml(String(data.llm_debug.provider || ''));
+        const raw = escapeHtml(String(data.llm_debug.raw_text || ''));
+        debugHtml = '<details class="mt-2"><summary class="small text-muted">LLM debug</summary><pre class="mb-0 small" style="white-space:pre-wrap;">' + 'provider: ' + provider + '\\n\\n' + raw + '</pre></details>';
+      }
+
+      bubble(
+        'assistant',
+        reply +
+        spec +
+        '<div class="mt-2">' + doctors + '</div>' +
+        '<div class="mt-2"><a class="btn btn-sm btn-outline-secondary" href="{{ url_for("patient.appointment_new") }}">Đặt lịch khám</a></div>' +
+        debugHtml
+      );
+    } catch (err) {
+      bubble('assistant', '<span class="text-danger">Không kết nối được máy chủ. Thử lại sau.</span>');
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+})();
+</script>
+{% endblock %}
