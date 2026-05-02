@@ -43,6 +43,7 @@ def _require_doctor_profile():
     abort(403)
 
 
+
 def _start_of_week(value: date) -> date:
     return value - timedelta(days=value.weekday())
 
@@ -64,6 +65,7 @@ def _week_options(center_week_start: date, past_weeks: int = 2, future_weeks: in
         label = f"Tuan {start.strftime('%d/%m/%Y')} - {end.strftime('%d/%m/%Y')}"
         options.append((start.isoformat(), label))
     return options
+
 
 
 @doctor_bp.get("/dashboard")
@@ -90,6 +92,7 @@ def profile():
         doctor.specialty = form.specialty.data.strip()
         doctor.experience_years = int(form.experience_years.data)
         doctor.description = (form.description.data or "").strip() or None
+
         if _is_admin():
             doctor.price_vnd = int(form.price_vnd.data)
 
@@ -111,7 +114,6 @@ def profile():
         return _redirect_with_doctor_context("doctor.profile", doctor.id)
 
     return render_template("doctor/profile.html", doctor=doctor, form=form)
-
 
 @doctor_bp.get("/weekly")
 @doctor_bp.post("/weekly")
