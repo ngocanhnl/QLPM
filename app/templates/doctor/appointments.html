@@ -16,6 +16,8 @@
         <thead>
           <tr>
             <th>Patient</th>
+            <th>Booking For</th>
+            <th>Booked Person Info</th>
             <th>Slot</th>
             <th>Status</th>
             <th class="text-end">Action</th>
@@ -25,6 +27,19 @@
           {% for a in appointments %}
             <tr>
               <td>{{ a.patient.username }}</td>
+              <td>
+                {% if a.booking_for == 'self' %}
+                  <span class="badge text-bg-info">Self</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">Relative</span>
+                {% endif %}
+              </td>
+              <td class="small">
+                <div><strong>Name:</strong> {{ a.contact_fullname or '-' }}</div>
+                <div><strong>Phone:</strong> {{ a.contact_phone or '-' }}</div>
+                <div><strong>Email:</strong> {{ a.contact_email or '-' }}</div>
+                <div><strong>Symptoms:</strong> {{ a.symptoms or '-' }}</div>
+              </td>
               <td>{{ a.schedule.date }} {{ a.schedule.start_time.strftime('%H:%M') }}-{{ a.schedule.end_time.strftime('%H:%M') }}</td>
               <td><span class="badge text-bg-light border">{{ a.status.value }}</span></td>
               <td class="text-end">
@@ -32,7 +47,7 @@
               </td>
             </tr>
           {% else %}
-            <tr><td colspan="4" class="text-muted">No appointments yet.</td></tr>
+            <tr><td colspan="6" class="text-muted">No appointments yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

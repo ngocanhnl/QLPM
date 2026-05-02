@@ -46,6 +46,15 @@
           {% for e in form.experience_years.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
         </div>
         <div class="col-md-6">
+          <label class="form-label">{{ form.price_vnd.label }}</label>
+          {% if current_user.is_authenticated and current_user.role.value != 'ADMIN' %}
+            {{ form.price_vnd(class="form-control", readonly="readonly") }}
+          {% else %}
+            {{ form.price_vnd(class="form-control") }}
+          {% endif %}
+          {% for e in form.price_vnd.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6">
           <label class="form-label">{{ form.hospital_name.label }}</label>
           {{ form.hospital_name(class="form-control", placeholder="Hospital or clinic name") }}
           {% for e in form.hospital_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}

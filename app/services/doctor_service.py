@@ -32,7 +32,9 @@ class DoctorService:
         *,
         doctor_name: str | None = None,
         hospital_name: str | None = None,
-        specialty: str | None,
+        specialty: str | None = None,
+        exact_hospital_name: str | None = None,
+        exact_specialty: str | None = None,
         min_experience_years: int | None = None,
         max_experience_years: int | None = None,
     ) -> list[Doctor]:
@@ -43,6 +45,10 @@ class DoctorService:
             stmt = stmt.where(Hospital.name.ilike(f"%{hospital_name.strip()}%"))
         if specialty:
             stmt = stmt.where(Doctor.specialty.ilike(f"%{specialty.strip()}%"))
+        if exact_hospital_name:
+            stmt = stmt.where(Hospital.name == exact_hospital_name.strip())
+        if exact_specialty:
+            stmt = stmt.where(Doctor.specialty == exact_specialty.strip())
         if min_experience_years is not None:
             stmt = stmt.where(Doctor.experience_years >= int(min_experience_years))
         if max_experience_years is not None:

@@ -2,123 +2,214 @@
 {% block title %}Weekly schedule{% endblock %}
 
 {% block content %}
-<div class="row g-3 align-items-end mb-3">
-  <div class="col-md-8">
-    <h1 class="h4 mb-0">Weekly working shifts</h1>
-    <div class="text-muted">Define shifts by weekday. Slots will be generated for the next 7 days.</div>
+<section class="hero-panel p-4 p-lg-5 mb-4">
+  <div class="row align-items-center g-4">
+    <div class="col-lg-8">
+      <span class="eyebrow mb-3">Weekly Planner</span>
+      <h1 class="display-6 fw-bold mb-2">Quan ly ca lam viec theo tung tuan</h1>
+      <p class="mb-0 text-white-50">Chuyen tuan, chon ngay bat ky tren bang va them ca lam trong mot giao dien duy nhat.</p>
+    </div>
+    <div class="col-lg-4 text-lg-end">
+      <a class="btn btn-light px-4" href="{{ url_for('doctor.schedules') }}">Quan ly tat ca lich</a>
+    </div>
   </div>
-  <div class="col-md-4 text-md-end">
-    <a class="btn btn-outline-primary" href="{{ url_for('doctor.schedules') }}">Manage schedules</a>
+</section>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="metric-card">
+      <div class="small text-muted mb-2">Tuan dang xem</div>
+      <div class="metric-value">{{ week_start.strftime('%d/%m') }} - {{ week_end.strftime('%d/%m') }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="metric-card">
+      <div class="small text-muted mb-2">Tong mau ca lap lai</div>
+      <div class="metric-value">{{ shifts|length }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="metric-card">
+      <div class="small text-muted mb-2">Ngay dang chon</div>
+      <div class="metric-value">{{ selected_date.strftime('%d/%m/%Y') }}</div>
+    </div>
   </div>
 </div>
 
-<div class="card shadow-sm mb-3">
-  <div class="card-body">
-    <form method="post" class="row g-2 align-items-end">
-      {{ form.csrf_token }}
-      <div class="col-md-4">
-        <label class="form-label">{{ form.weekday.label }}</label>
-        {{ form.weekday(class="form-select") }}
-        {% for e in form.weekday.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+<div class="card mb-4">
+  <div class="card-body p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+      <div>
+        <h2 class="section-title mb-1">Bang lich theo tuan</h2>
+        <p class="section-subtitle">Moi tuan co bo ca mau rieng. Xoa trong tuan nao chi anh huong den tuan do.</p>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">{{ form.start_time.label }}</label>
-        {{ form.start_time(class="form-control") }}
-        {% for e in form.start_time.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="{{ url_for('doctor.weekly', week_start=prev_week.isoformat(), selected_date=prev_selected_date.isoformat()) }}">Tuan truoc</a>
+        <a class="btn btn-outline-primary" href="{{ url_for('doctor.weekly', week_start=next_week.isoformat(), selected_date=next_selected_date.isoformat()) }}">Tuan sau</a>
       </div>
-      <div class="col-md-3">
-        <label class="form-label">{{ form.end_time.label }}</label>
-        {{ form.end_time(class="form-control") }}
-        {% for e in form.end_time.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-      </div>
-      <div class="col-md-2 d-grid">
-        <button class="btn btn-primary" type="submit">{{ form.submit.label.text }}</button>
-      </div>
-    </form>
+    </div>
+
+    <div class="weekly-calendar">
+      {% for d in days %}
+        <a
+          class="calendar-day {% if d == selected_date %}active{% endif %}"
+          href="{{ url_for('doctor.weekly', week_start=week_start.isoformat(), selected_date=d.isoformat()) }}"
+        >
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+            <div>
+              <div class="calendar-day__weekday">{{ weekday_labels[d.weekday()] }}</div>
+              <div class="calendar-day__date">{{ d.strftime('%d/%m/%Y') }}</div>
+            </div>
+            {% if schedules_by_date[d] %}
+              <span class="soft-badge success">{{ schedules_by_date[d]|length }} ca</span>
+            {% else %}
+              <span class="soft-badge">Trong</span>
+            {% endif %}
+          </div>
+
+          <div class="calendar-day__section">
+            <div class="calendar-day__label">Ca lap lai</div>
+            {% if shifts_by_weekday[d.weekday()] %}
+              {% for sh in shifts_by_weekday[d.weekday()] %}
+                <div class="calendar-slot template">
+                  <span>{{ sh.start_time.strftime('%H:%M') }}-{{ sh.end_time.strftime('%H:%M') }}</span>
+                  <span>Mau</span>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="calendar-empty">Chua co ca mau</div>
+            {% endif %}
+          </div>
+
+          <div class="calendar-day__section">
+            <div class="calendar-day__label">Lich trong he thong</div>
+            {% if schedules_by_date[d] %}
+              {% for s in schedules_by_date[d] %}
+                <div class="calendar-slot
+                  {% if s.appointment and s.appointment.status.value != 'CANCELLED' %}booked
+                  {% elif s.is_available %}available
+                  {% else %}blocked{% endif %}">
+                  <span>{{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }}</span>
+                  <span>
+                    {% if s.appointment and s.appointment.status.value != 'CANCELLED' %}
+                      Da book
+                    {% elif s.is_available %}
+                      Trong
+                    {% else %}
+                      Khoa
+                    {% endif %}
+                  </span>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="calendar-empty">Chua tao slot</div>
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
   </div>
 </div>
 
 <div class="row g-3">
   <div class="col-lg-5">
-    <div class="card shadow-sm h-100">
-      <div class="card-body">
-        <h2 class="h6 mb-3">Your weekly shifts</h2>
+    <div class="card h-100">
+      <div class="card-body p-4">
+        <div class="mb-3">
+          <h2 class="section-title mb-1">Them ca cho ngay da chon</h2>
+          <p class="section-subtitle">
+            Ngay {{ selected_date.strftime('%d/%m/%Y') }} - {{ weekday_labels[selected_date.weekday()] }}.
+            Co the chon nhieu tuan de ap dung cung mot ca mau trong mot lan tao.
+          </p>
+        </div>
+
+        <form method="post" class="row g-3">
+          {{ form.csrf_token }}
+          <input type="hidden" name="week_start" value="{{ week_start.isoformat() }}" />
+          <input type="hidden" name="selected_date" value="{{ selected_date.isoformat() }}" />
+
+          <div class="col-12">
+            <label class="form-label fw-semibold">Ngay duoc chon</label>
+            <input class="form-control" value="{{ selected_date.strftime('%d/%m/%Y') }}" disabled />
+            {% for e in form.weekday.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.start_time.label }}</label>
+            {{ form.start_time(class="form-control") }}
+            {% for e in form.start_time.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">{{ form.end_time.label }}</label>
+            {{ form.end_time(class="form-control") }}
+            {% for e in form.end_time.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-semibold">Cac tuan ap dung</label>
+            <div class="week-option-grid">
+              {% for week_value, week_label in week_options %}
+                <label class="week-option">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    name="apply_weeks"
+                    value="{{ week_value }}"
+                    {% if week_value in selected_apply_weeks %}checked{% endif %}
+                  />
+                  <span>{{ week_label }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            <div class="form-text">Mac dinh da chon tuan dang xem. Co the tick them cac tuan khac de ap dung cung mau ca.</div>
+          </div>
+
+          <div class="col-12 d-grid">
+            <button class="btn btn-primary" type="submit">Them ca cho {{ weekday_labels[selected_date.weekday()] }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-body p-4">
+        <div class="mb-3">
+          <h2 class="section-title mb-1">Ca lam mau cua ngay da chon</h2>
+          <p class="section-subtitle">Xoa ca mau o day chi xoa template va slot cua dung tuan dang xem.</p>
+        </div>
+
         <div class="table-responsive">
-          <table class="table table-sm align-middle">
+          <table class="table align-middle mb-0">
             <thead>
               <tr>
-                <th>Weekday</th>
-                <th>Time</th>
-                <th class="text-end">Action</th>
+                <th>Thu</th>
+                <th>Khung gio</th>
+                <th class="text-end">Thao tac</th>
               </tr>
             </thead>
             <tbody>
-              {% for sh in shifts %}
+              {% for sh in selected_day_shifts %}
                 <tr>
                   <td>{{ weekday_labels[sh.weekday] }}</td>
                   <td>{{ sh.start_time.strftime('%H:%M') }}-{{ sh.end_time.strftime('%H:%M') }}</td>
                   <td class="text-end">
                     <form method="post" action="{{ url_for('doctor.weekly_delete', shift_id=sh.id) }}">
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                      <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Delete this shift?')">Delete</button>
+                      <input type="hidden" name="week_start" value="{{ week_start.isoformat() }}" />
+                      <input type="hidden" name="selected_date" value="{{ selected_date.isoformat() }}" />
+                      <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Delete this shift?')">Xoa</button>
                     </form>
                   </td>
                 </tr>
               {% else %}
-                <tr><td colspan="3" class="text-muted">No weekly shifts yet.</td></tr>
+                <tr><td colspan="3"><div class="empty-state py-3">Ngay nay chua co ca lap lai nao.</div></td></tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-lg-7">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h2 class="h6 mb-3">Next 7 days (generated slots)</h2>
-        <div class="table-responsive">
-          <table class="table table-sm align-middle">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Weekday</th>
-                <th>Slots</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for d in days %}
-                <tr>
-                  <td>{{ d }}</td>
-                  <td class="text-muted small">{{ weekday_labels[d.weekday()] }}</td>
-                  <td>
-                    {% if schedules_by_date[d] %}
-                      {% for s in schedules_by_date[d] %}
-                        {% if s.appointment and s.appointment.status.value != 'CANCELLED' %}
-                          <span class="badge text-bg-warning me-1">
-                            {{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }} (Booked)
-                          </span>
-                        {% elif s.is_available %}
-                          <span class="badge text-bg-success me-1">
-                            {{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }} (Available)
-                          </span>
-                        {% else %}
-                          <span class="badge text-bg-secondary me-1">
-                            {{ s.start_time.strftime('%H:%M') }}-{{ s.end_time.strftime('%H:%M') }} (Blocked)
-                          </span>
-                        {% endif %}
-                      {% endfor %}
-                    {% else %}
-                      <span class="text-muted">No slots</span>
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <div class="small text-muted">Booked = yellow, Available = green, Blocked = gray.</div>
       </div>
     </div>
   </div>

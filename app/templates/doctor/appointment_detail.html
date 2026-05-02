@@ -20,6 +20,32 @@
             </div>
           </div>
         </div>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <div class="small text-muted">Booking for</div>
+            <div class="fw-semibold">
+              {% if appointment.booking_for == 'self' %}Self{% else %}Relative{% endif %}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="small text-muted">Booked person</div>
+            <div class="fw-semibold">{{ appointment.contact_fullname or '-' }}</div>
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <div class="small text-muted">Phone</div>
+            <div class="fw-semibold">{{ appointment.contact_phone or '-' }}</div>
+          </div>
+          <div class="col-md-6">
+            <div class="small text-muted">Email</div>
+            <div class="fw-semibold">{{ appointment.contact_email or '-' }}</div>
+          </div>
+          <div class="col-12">
+            <div class="small text-muted">Symptoms</div>
+            <div class="fw-semibold">{{ appointment.symptoms or '-' }}</div>
+          </div>
+        </div>
         <div class="mb-3">
           <div class="small text-muted">Current status</div>
           <div><span class="badge text-bg-light border">{{ appointment.status.value }}</span></div>
